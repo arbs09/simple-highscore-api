@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 import sqlite3
+import os
 
 app = FastAPI()
 
@@ -10,7 +11,8 @@ class Highscore(BaseModel):
     score: int
 
 def get_db_connection():
-    conn = sqlite3.connect('highscores.db')
+    os.makedirs('db', exist_ok=True)
+    conn = sqlite3.connect('db/highscores.db')
     conn.row_factory = sqlite3.Row
     return conn
 
