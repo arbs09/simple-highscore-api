@@ -76,7 +76,7 @@ def get_highscores():
     cursor.execute('SELECT AVG(score) as score FROM highscores')
     average_score = cursor.fetchone()['score']
     
-    cursor.execute('Count(*) as count FROM highscores')
+    cursor.execute('SELECT COUNT(*) as count FROM highscores')
     users = cursor.fetchone()['count']
 
     conn.close()
