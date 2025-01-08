@@ -7,6 +7,9 @@ import os
 app = FastAPI()
 
 class Highscore(BaseModel):
+    score: int
+
+class HighscoreCreate(BaseModel):
     username: str
     score: int
 
@@ -31,8 +34,8 @@ def create_tables():
 
 create_tables()
 
-@app.post("/highscores/", response_model=Highscore)
-def create_highscore(highscore: Highscore):
+@app.post("/post/", response_model=HighscoreCreate)
+def create_highscore(highscore: HighscoreCreate):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('INSERT INTO highscores (username, score) VALUES (?, ?)', (highscore.username, highscore.score))
@@ -40,44 +43,25 @@ def create_highscore(highscore: Highscore):
     conn.close()
     return highscore
 
-@app.get("/highscores/", response_model=List[Highscore])
+@app.get("/", response_model=dict)
 def get_highscores():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT username, score FROM highscores')
-    rows = cursor.fetchall()
+    
+    # Höchster Highscore
+    cursor.execute('SELECT MAX(score) as score FROM highscores')
+    highest_score = cursor.fetchone()['score']
+    
+    # Durchschnittlicher Highscore
+    cursor.execute('SELECT AVG(score) as score FROM highscores')
+    average_score = cursor.fetchone()['score']
+    
     conn.close()
-    return [Highscore(username=row['username'], score=row['score']) for row in rows]
-
-@app.get("/highscores/{username}", response_model=Highscore)
-def get_highscore(username: str):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT username, score FROM highscores WHERE username = ?', (username,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return Highscore(username=row['username'], score=row['score'])
-    raise HTTPException(status_code=404, detail="Highscore not found")
-
-@app.get("/highscores/current", response_model=Highscore)
-def get_top_highscore():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT username, score FROM highscores ORDER BY score DESC LIMIT 1')
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return Highscore(username=row['username'], score=row['score'])
-    raise HTTPException(status_code=404, detail="No highscores available")
-
-@app.get("/highscores/average", response_model=Highscore)
-def get_average_highscore():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT AVG(score) FROM highscores')
-    average_score = cursor.fetchone()[0]
-    conn.close()
-    if average_score is not None:
-        return Highscore(username="average", score=int(average_score))
-    raise HTTPException(status_code=404, detail="No highscores available")
+    
+    if highest_score is None or average_score is None:
+        raise HTTPException(status_code=404, detail="No highscores available")
+    
+    return {
+        "highest_score": highest_score,
+        "average_score": int(average_score)
+    }
