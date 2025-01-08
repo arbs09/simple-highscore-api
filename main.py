@@ -34,6 +34,9 @@ create_tables()
 
 @app.post("/post/", response_model=HighscoreCreate)
 def create_or_update_highscore(highscore: HighscoreCreate):
+    if not highscore.username.isalnum():
+        raise HTTPException(status_code=400, detail="Username must contain only alphanumeric characters")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
 
