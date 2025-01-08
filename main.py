@@ -70,14 +70,15 @@ def get_highscores():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Höchster Highscore
     cursor.execute('SELECT MAX(score) as score FROM highscores')
     highest_score = cursor.fetchone()['score']
     
-    # Durchschnittlicher Highscore
     cursor.execute('SELECT AVG(score) as score FROM highscores')
     average_score = cursor.fetchone()['score']
     
+    cursor.execute('Count(*) as count FROM highscores')
+    users = cursor.fetchone()['count']
+
     conn.close()
     
     if highest_score is None or average_score is None:
@@ -85,5 +86,6 @@ def get_highscores():
     
     return {
         "highest_score": highest_score,
+        "users": int(users),
         "average_score": int(average_score)
     }
