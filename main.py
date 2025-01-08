@@ -16,6 +16,21 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def create_tables():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS highscores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            score INTEGER NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+create_tables()
+
 @app.post("/highscores/", response_model=Highscore)
 def create_highscore(highscore: Highscore):
     conn = get_db_connection()
@@ -43,20 +58,6 @@ def get_highscore(username: str):
     conn.close()
     if row:
         return Highscore(username=row['username'], score=row['score'])
-    raise HTTPException(status_code=404, detail="Highscore not found")
-
-@app.delete("/highscores/{username}", response_model=Highscore)
-def delete_highscore(username: str):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT username, score FROM highscores WHERE username = ?', (username,))
-    row = cursor.fetchone()
-    if row:
-        cursor.execute('DELETE FROM highscores WHERE username = ?', (username,))
-        conn.commit()
-        conn.close()
-        return Highscore(username=row['username'], score=row['score'])
-    conn.close()
     raise HTTPException(status_code=404, detail="Highscore not found")
 
 @app.get("/highscores/current", response_model=Highscore)
