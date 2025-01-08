@@ -49,6 +49,13 @@ def create_or_update_highscore(highscore: HighscoreCreate):
             cursor.execute('''
                 UPDATE highscores SET score = ? WHERE username = ?
             ''', (highscore.score, highscore.username))
+        elif highscore.score == current_score:
+            raise HTTPException(status_code=409, detail="Highscore of the user is the same as currently")
+        elif highscore.score < current_score:
+            raise HTTPException(status_code=409, detail="Highscore of the user is lower than currently")
+        else:
+            raise HTTPException(status_code=500, detail="Something went wrong")    
+    
     else:
         cursor.execute('''
             INSERT INTO highscores (username, score) VALUES (?, ?)
