@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
 import sqlite3
 import os
 
@@ -24,8 +23,7 @@ def create_tables():
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS highscores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
+            username TEXT PRIMARY KEY,
             score INTEGER NOT NULL
         )
     ''')
@@ -35,10 +33,13 @@ def create_tables():
 create_tables()
 
 @app.post("/post/", response_model=HighscoreCreate)
-def create_highscore(highscore: HighscoreCreate):
+def create_or_update_highscore(highscore: HighscoreCreate):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO highscores (username, score) VALUES (?, ?)', (highscore.username, highscore.score))
+    cursor.execute('''
+        INSERT INTO highscores (username, score) VALUES (?, ?)
+        ON CONFLICT(username) DO UPDATE SET score=excluded.score
+    ''', (highscore.username, highscore.score))
     conn.commit()
     conn.close()
     return highscore
